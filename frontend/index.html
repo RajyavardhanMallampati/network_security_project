@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Network Traffic Predictor</title>
+  <style>
+    body { font-family: Arial; margin: 2rem; }
+    label { display: block; margin-top: 10px; }
+    input, select, button { padding: 8px; margin-top: 5px; }
+    #result { margin-top: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>🧠 AI-Based Traffic Classification</h2>
+
+  <form id="predictForm">
+    <label>Traffic Type (0=Web, 1=Video, 2=Messaging, 3=File Transfer, 4=Database):
+      <input type="number" name="traffic_type" required>
+    </label>
+    <label>Protocol (0=TCP, 1=UDP, 2=ICMP):
+      <input type="number" name="protocol" required>
+    </label>
+    <label>Duration (sec):
+      <input type="number" step="0.1" name="duration" required>
+    </label>
+    <label>Packet Count:
+      <input type="number" name="packet_count" required>
+    </label>
+    <label>Average Packet Size:
+      <input type="number" name="avg_packet_size" required>
+    </label>
+    <label>Bytes per Second:
+      <input type="number" step="0.01" name="bytes_per_sec" required>
+    </label>
+    <label>Flag (0=SYN, 1=ACK, 2=PSH, 3=FIN, 4=URG, 5=RST):
+      <input type="number" name="flag" required>
+    </label>
+
+    <button type="submit">Predict</button>
+  </form>
+
+  <div id="result"></div>
+
+  <script>
+  const form = document.getElementById("predictForm");
+  const resultDiv = document.getElementById("result");
+
+  // ✅ Add class map here
+  const classMap = {
+    0: "Web",
+    1: "Video",
+    2: "Messaging",
+    3: "File Transfer",
+    4: "Anomaly",
+    5: "Malware"
+  };
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+    const payload = {};
+    for (const [key, value] of formData.entries()) {
+      payload[key] = isNaN(Number(value)) ? value : Number(value);
+    }
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      const label = classMap[data.predicted_label] ?? "Unknown";
+
+      // 🔥 Highlight Malware or Anomaly
+      const color = (label === "Malware" || label === "Anomaly") ? "red" : "green";
+
+      resultDiv.innerHTML = `🔍 Predicted Class: <span style="color:${color}; font-weight:bold;">${label}</span>`;
+    } catch (error) {
+      resultDiv.innerText = "❌ Error connecting to backend.";
+    }
+  });
+</script>
